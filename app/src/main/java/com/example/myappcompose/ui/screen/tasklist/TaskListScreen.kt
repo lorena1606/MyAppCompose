@@ -1,9 +1,11 @@
 package com.example.myappcompose.ui.screen.tasklist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
@@ -13,93 +15,90 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myappcompose.domain.model.Task
-import com.example.myappcompose.ui.TaskViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
-    viewModel: TaskViewModel = hiltViewModel(),
-    onLogout: () -> Unit
+    viewModel: TaskListViewModel = hiltViewModel(),
+    onLogout: () -> Unit,
+    onNavigateToForm: (String?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var textInput by remember { mutableStateOf("") }
+    var taskToDelete by remember { mutableStateOf<Task?>(null) }
+
+    if (taskToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { taskToDelete = null },
+            title = { Text("Eliminar tarea") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta tarea?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTask(taskToDelete!!.id)
+                    taskToDelete = null
+                }) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { taskToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis Tareas (Firestore)") },
+                title = { Text("Mis Tareas") },
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(imageVector = Icons.Default.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { onNavigateToForm(null) }) {
+                Icon(Icons.Default.Add, contentDescription = "Nueva tarea")
+            }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Fila para agregar tareas
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = textInput,
-                    onValueChange = { textInput = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Escribe una nueva tarea...") },
-                    singleLine = true
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (uiState.tasks.isEmpty()) {
+                Text(
+                    text = "No hay tareas registradas.",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.bodyLarge
                 )
-                Button(
-                    onClick = {
-                        if (textInput.isNotBlank()) {
-                            viewModel.addTask(textInput)
-                            textInput = ""
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.CenterVertically)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(16.dp)
                 ) {
-                    Text("Agregar")
+                    items(uiState.tasks, key = { it.id }) { task ->
+                        TaskItemRow(
+                            task = task,
+                            onCheckedChange = { viewModel.toggleCompleted(task) },
+                            onDelete = { taskToDelete = task },
+                            onClick = { onNavigateToForm(task.id) }
+                        )
+                    }
                 }
             }
 
-            // Mostrar errores si ocurren
             uiState.error?.let { errorMessage ->
-                Text(
-                    text = "Error: $errorMessage",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            // Contenido principal según el estado de carga o datos
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else if (uiState.tasks.isEmpty()) {
-                    Text(
-                        text = "No hay tareas registradas.",
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(uiState.tasks, key = { it.id }) { task ->
-                            TaskItemRow(
-                                task = task,
-                                onCheckedChange = { viewModel.toggleCompleted(task) },
-                                onDelete = { viewModel.deleteTask(task) }
-                            )
-                        }
-                    }
+                Snackbar(
+                    modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter)
+                ) {
+                    Text(text = errorMessage)
                 }
             }
         }
@@ -110,10 +109,13 @@ fun TaskListScreen(
 fun TaskItemRow(
     task: Task,
     onCheckedChange: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -131,10 +133,19 @@ fun TaskItemRow(
                     checked = task.completed,
                     onCheckedChange = { onCheckedChange() }
                 )
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column {
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (task.description.isNotBlank()) {
+                        Text(
+                            text = task.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1
+                        )
+                    }
+                }
             }
             IconButton(onClick = onDelete) {
                 Icon(
