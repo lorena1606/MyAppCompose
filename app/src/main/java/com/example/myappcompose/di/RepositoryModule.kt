@@ -1,8 +1,10 @@
 package com.example.myappcompose.di
 
 import com.example.myappcompose.data.repository.AuthRepositoryImpl
+import com.example.myappcompose.data.repository.DraftRepositoryImpl
 import com.example.myappcompose.data.repository.TaskRepositoryImpl
 import com.example.myappcompose.domain.repository.AuthRepository
+import com.example.myappcompose.domain.repository.DraftRepository
 import com.example.myappcompose.domain.repository.TaskRepository
 import dagger.Binds
 import dagger.Module
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindTaskRepository(
         taskRepositoryImpl: TaskRepositoryImpl
     ): TaskRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDraftRepository(
+        draftRepositoryImpl: DraftRepositoryImpl
+    ): DraftRepository
 }

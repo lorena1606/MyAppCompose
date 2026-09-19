@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +22,8 @@ import com.example.myappcompose.domain.model.Task
 fun TaskListScreen(
     viewModel: TaskListViewModel = hiltViewModel(),
     onLogout: () -> Unit,
-    onNavigateToForm: (String?) -> Unit
+    onNavigateToForm: (String?) -> Unit,
+    onNavigateToDrafts: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var taskToDelete by remember { mutableStateOf<Task?>(null) }

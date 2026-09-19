@@ -12,6 +12,7 @@ import com.example.myappcompose.ui.screen.tasklist.TaskListScreen
 import com.example.myappcompose.ui.screen.login.LoginScreen
 import com.example.myappcompose.ui.screen.register.RegisterScreen
 import com.example.myappcompose.ui.screen.taskform.TaskFormScreen
+import com.example.myappcompose.ui.screen.drafts.DraftsScreen
 
 @Composable
 fun NavGraph(
@@ -63,6 +64,16 @@ fun NavGraph(
                 },
                 onNavigateToForm = { taskId ->
                     navController.navigate(Screen.TaskForm.createRoute(taskId))
+                },
+                onNavigateToDrafts = {
+                    navController.navigate(Screen.Drafts.route)
+                }
+            )
+        }
+        composable(Screen.Drafts.route) {
+            DraftsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

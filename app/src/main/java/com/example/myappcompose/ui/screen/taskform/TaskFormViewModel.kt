@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myappcompose.domain.usecase.task.CreateTaskUseCase
 import com.example.myappcompose.domain.usecase.task.GetTaskUseCase
 import com.example.myappcompose.domain.usecase.task.UpdateTaskUseCase
+import com.example.myappcompose.domain.usecase.draft.SaveDraftUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,7 @@ class TaskFormViewModel @Inject constructor(
     private val createTaskUseCase: CreateTaskUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskUseCase: GetTaskUseCase,
+    private val saveDraftUseCase: SaveDraftUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -87,6 +89,24 @@ class TaskFormViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error al guardar") }
+            }
+        }
+    }
+
+    fun saveAsDraft() {
+        val state = _uiState.value
+        if (state.title.isBlank()) {
+            _uiState.update { it.copy(error = "El título es obligatorio para el borrador") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = saveDraftUseCase(state.title, state.description)
+            result.onSuccess {
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error al guardar borrador") }
             }
         }
     }

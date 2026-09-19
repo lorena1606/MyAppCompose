@@ -76,9 +76,18 @@ fun TaskFormScreen(
                 enabled = !uiState.isLoading
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Guardar Tarea")
+                    Text("Publicar Tarea")
+                }
+            }
+
+            if (uiState.title.isNotBlank() && !uiState.isLoading) {
+                OutlinedButton(
+                    onClick = { viewModel.saveAsDraft() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Guardar como Borrador")
                 }
             }
         }
