@@ -54,6 +54,9 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("Mis Tareas") },
                 actions = {
+                    IconButton(onClick = onNavigateToDrafts) {
+                        Icon(imageVector = Icons.Default.Description, contentDescription = "Ver borradores")
+                    }
                     IconButton(onClick = onLogout) {
                         Icon(imageVector = Icons.Default.Logout, contentDescription = "Cerrar sesión")
                     }
